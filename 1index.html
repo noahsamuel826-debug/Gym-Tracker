@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Tracker</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+background:#111;
+color:white;
+padding:20px;
+max-width:500px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+}
+
+input,select,button{
+width:100%;
+padding:10px;
+margin-top:8px;
+border:none;
+border-radius:6px;
+display:block;
+}
+
+button{
+background:#2ecc71;
+color:white;
+font-weight:bold;
+}
+
+.card{
+background:#1e1e1e;
+padding:15px;
+margin-top:15px;
+border-radius:10px;
+}
+
+canvas{
+margin-top:20px;
+background:white;
+border-radius:10px;
+height:250px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Gym Tracker</h1>
+
+<div class="card">
+
+<label>Übung</label>
+<input id="exerciseName" placeholder="z.B. Bankdrücken">
+
+<label>Gewicht (kg)</label>
+<input id="weight" type="number">
+
+<button onclick="addExercise()">Speichern</button>
+
+</div>
+
+<div class="card">
+
+<label>Übung auswählen</label>
+<select id="exerciseSelectGraph"></select>
+
+<button onclick="drawChart()">Fortschritt anzeigen</button>
+
+<canvas id="progressChart"></canvas>
+
+</div>
+
+<script>
+
+let exercises = JSON.parse(localStorage.getItem("gymData")) || [];
+
+let chart = null;
+
+function saveData(){
+localStorage.setItem("gymData", JSON.stringify(exercises));
+}
+
+function addExercise(){
+
+let name=document.getElementById("exerciseName").value.trim();
+let kg=document.getElementById("weight").value;
+
+if(name==="" || kg==="") return;
+
+let date=new Date().toLocaleDateString();
+
+exercises.push({
+name:name,
+kg:Number(kg),
+date:date
+});
+
+saveData();
+
+document.getElementById("exerciseName").value="";
+document.getElementById("weight").value="";
+
+render();
+
+}
+
+function render(){
+
+let select=document.getElementById("exerciseSelectGraph");
+
+let unique=[...new Set(exercises.map(e=>e.name))];
+
+select.innerHTML="";
+
+unique.forEach(name=>{
+let option=document.createElement("option");
+option.value=name;
+option.textContent=name;
+select.appendChild(option);
+});
+
+}
+
+function drawChart(){
+
+let selected=document.getElementById("exerciseSelectGraph").value;
+
+if(!selected) return;
+
+let dataExercises=exercises.filter(e=>e.name===selected);
+
+let labels=dataExercises.map(e=>e.date);
+let data=dataExercises.map(e=>e.kg);
+
+let ctx=document.getElementById("progressChart").getContext("2d");
+
+if(chart){
+chart.destroy();
+}
+
+chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:selected+" Fortschritt",
+data:data,
+borderWidth:3,
+tension:0.3
+}]
+},
+options:{
+responsive:true,
+scales:{
+y:{
+beginAtZero:true
+}
+}
+}
+});
+
+}
+
+render();
+
+</script>
+
+</body>
+</html>
